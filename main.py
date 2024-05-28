@@ -14,10 +14,10 @@ def generate_unique_code(length):
         code = ""
         for _ in range(length):
             code += random.choice(ascii_uppercase)
-        
+
         if code not in rooms:
             break
-    
+
     return code
 
 @app.route("/", methods=["POST", "GET"])
@@ -28,25 +28,29 @@ def home():
         code = request.form.get("code")
         join = request.form.get("join", False)
         create = request.form.get("create", False)
+        public = request.form.get("public", False)
 
         if not name:
-            return render_template("home.html", error="Please enter a name.", code=code, name=name)
+            return render_template("home.html", error="Please enter a name.", code=code, name=name, public_room_list=get_public_rooms())
 
         if join != False and not code:
-            return render_template("home.html", error="Please enter a room code.", code=code, name=name)
-        
+            return render_template("home.html", error="Please enter a room code.", code=code, name=name, public_room_list=get_public_rooms())
+
         room = code
         if create != False:
             room = generate_unique_code(4)
-            rooms[room] = {"members": 0, "messages": []}
+            rooms[room] = {"members": 0, "messages": [], "public": public, "creator": name}
         elif code not in rooms:
-            return render_template("home.html", error="Room does not exist.", code=code, name=name)
-        
+            return render_template("home.html", error="Room does not exist.", code=code, name=name, public_room_list=get_public_rooms())
+
         session["room"] = room
         session["name"] = name
         return redirect(url_for("room"))
 
-    return render_template("home.html")
+    return render_template("home.html", public_room_list=get_public_rooms())
+
+def get_public_rooms():
+    return [{"code": code, "creator": details["creator"]} for code, details in rooms.items() if details["public"]]
 
 @app.route("/room")
 def room():
@@ -60,8 +64,8 @@ def room():
 def message(data):
     room = session.get("room")
     if room not in rooms:
-        return 
-    
+        return
+
     content = {
         "name": session.get("name"),
         "message": data["data"]
@@ -79,7 +83,7 @@ def connect(auth):
     if room not in rooms:
         leave_room(room)
         return
-    
+
     join_room(room)
     send({"name": name, "message": "has entered the room"}, to=room)
     rooms[room]["members"] += 1
@@ -95,9 +99,9 @@ def disconnect():
         rooms[room]["members"] -= 1
         if rooms[room]["members"] <= 0:
             del rooms[room]
-    
+
     send({"name": name, "message": "has left the room"}, to=room)
     print(f"{name} has left the room {room}")
 
 if __name__ == "__main__":
-    socketio.run(app, debug=True)
+    socketio.run(app,  host='172.20.10.2', port=5001, debug=True)

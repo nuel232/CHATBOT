@@ -7,18 +7,41 @@
       type="text"
       placeholder="Pick a name!"
       name="name"
-      value="{{name}}"
+      value="{{ name }}"
     />
   </div>
   <div class="join">
-    <input type="text" placeholder="Room Code" name="code" value="{{code}}" />
+    <input type="text" placeholder="Room Code" name="code" value="{{ code }}" />
     <button type="submit" name="join">Join a Room</button>
   </div>
   <button type="submit" name="create" class="create-btn">Create a Room</button>
+  <div class="public-room-container">
+    <label for="public" class="public-room-label">Public room:</label>
+    <input
+      type="checkbox"
+      id="public"
+      name="public"
+      value="true"
+      class="public-room-checkbox"
+    />
+  </div>
+
   {% if error %}
   <ul>
-    <li>{{error}}</li>
+    <li>{{ error }}</li>
   </ul>
   {% endif %}
 </form>
+
+<!-- Display the list of available public rooms -->
+<h2>Available Public Rooms:</h2>
+<ul>
+  {% for room in public_room_list %}
+  <li class="room-info">
+    Room Code: <span class="room-code">{{ room.code }}</span> | Created by:
+    <span class="creator">{{ room.creator }}</span>
+  </li>
+  {% endfor %}
+</ul>
+
 {% endblock %}
